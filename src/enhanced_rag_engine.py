@@ -3,6 +3,11 @@ import re
 from typing import List, Dict, Any
 import yfinance as yf
 from datetime import datetime
+import sys
+sys.path.append(os.path.dirname(__file__))
+
+# Import the new portfolio advisor
+from portfolio_advisor_new import EnhancedPortfolioAdvisor
 
 try:
     from openai import OpenAI
@@ -658,6 +663,11 @@ class FinancialRAGEngine:
     def __init__(self, vector_db, api_key=None):
         self.vector_db = vector_db
         self.financial_fetcher = FinancialDataFetcher()
+        self.portfolio_advisor = EnhancedPortfolioAdvisor()
+        
+        # Store last financial plan for follow-up questions
+        self.last_plan = None
+        self.last_parsed_data = None
         
         if OPENAI_AVAILABLE:
             self.client = OpenAI(
@@ -702,13 +712,145 @@ class FinancialRAGEngine:
         
         return text
 
+    def detect_follow_up_query(self, query: str) -> bool:
+        """Detect if this is a follow-up to the last financial plan"""
+        query_lower = query.lower()
+        
+        if not self.last_parsed_data:
+            return False
+            
+        # Keywords that indicate a follow-up/modification
+        follow_up_keywords = [
+            'instead', 'what if', 'different', 'change', 'modify',
+            'adjust', 'instead of', 'what about', 'how about',
+            'rather than', 'if i', 'what happens if', 'suppose'
+        ]
+        
+        # Time modification keywords
+        time_keywords = ['years', 'year', 'time', 'horizon', 'shorter', 'longer']
+        
+        # Amount modification keywords
+        amount_keywords = ['more', 'less', 'increase', 'decrease', 'higher', 'lower']
+        
+        # Risk modification keywords
+        risk_keywords = ['risk', 'conservative', 'aggressive', 'moderate', 'safe']
+        
+        if any(keyword in query_lower for keyword in follow_up_keywords):
+            return True
+        if any(keyword in query_lower for keyword in time_keywords):
+            return True
+        if any(keyword in query_lower for keyword in amount_keywords):
+            return True
+        if any(keyword in query_lower for keyword in risk_keywords):
+            return True
+            
+        return False
+
+    def modify_plan_based_on_follow_up(self, query: str) -> Dict:
+        """Modify the last plan based on follow-up query"""
+        if not self.last_parsed_data:
+            return None
+            
+        query_lower = query.lower()
+        modified_data = self.last_parsed_data.copy()
+        
+        # Check for time horizon modification
+        if 'years' in query_lower or 'year' in query_lower:
+            # Look for numbers in the query
+            numbers = re.findall(r'\d+', query_lower)
+            for num in numbers:
+                num_int = int(num)
+                if 1 <= num_int <= 50:  # Reasonable time horizon
+                    modified_data['years'] = num_int
+                    break
+        
+        # Check for risk level modification
+        if 'low risk' in query_lower or 'conservative' in query_lower or 'safe' in query_lower:
+            modified_data['risk_level'] = 'conservative'
+        elif 'high risk' in query_lower or 'aggressive' in query_lower:
+            modified_data['risk_level'] = 'aggressive'
+        elif 'medium' in query_lower or 'moderate' in query_lower:
+            modified_data['risk_level'] = 'moderate'
+        
+        # Check for investment amount modification
+        if 'invest' in query_lower or 'save' in query_lower:
+            numbers = re.findall(r'\d+', query_lower)
+            for num in numbers:
+                num_int = int(num)
+                if 1000 <= num_int <= 1000000:  # Reasonable investment amount
+                    modified_data['monthly_investment'] = num_int
+                    break
+        
+        return modified_data
+
     def generate_response(self, query):
         """Main method to generate responses with enhanced capabilities"""
         
         # Add to conversation history
         self.add_to_conversation_history("user", query)
         
-        # First, check if this is a stock comparison query
+        # Check if this is a follow-up to the last financial plan
+        if self.detect_follow_up_query(query) and self.last_parsed_data:
+            modified_data = self.modify_plan_based_on_follow_up(query)
+            if modified_data:
+                # Generate new plan with modified data
+                plan_result = self.portfolio_advisor.generate_detailed_financial_plan(modified_data)
+                
+                if plan_result.get('success'):
+                    plan_response = self.portfolio_advisor.format_plan_response(plan_result)
+                    self.last_plan = plan_result
+                    self.last_parsed_data = modified_data
+                    
+                    response_data = {
+                        'answer': plan_response,
+                        'sources': [],
+                        'data_type': 'financial_plan_updated'
+                    }
+                    self.add_to_conversation_history("assistant", plan_response)
+                    return response_data
+        
+        # Check for financial planning queries
+        parsed_plan = self.portfolio_advisor.parse_financial_planning_query(query)
+        
+        # Check if this is a financial planning query (has age or monthly investment or years)
+        has_planning_data = parsed_plan.get('age') or parsed_plan.get('monthly_investment') or parsed_plan.get('years')
+        
+        if has_planning_data:
+            # Generate financial plan
+            plan_result = self.portfolio_advisor.generate_detailed_financial_plan(parsed_plan)
+            
+            if plan_result.get('success'):
+                plan_response = self.portfolio_advisor.format_plan_response(plan_result)
+                
+                # Store for follow-up questions
+                self.last_plan = plan_result
+                self.last_parsed_data = parsed_plan
+                
+                response_data = {
+                    'answer': plan_response,
+                    'sources': [],
+                    'data_type': 'financial_plan'
+                }
+                self.add_to_conversation_history("assistant", plan_response)
+                return response_data
+            elif plan_result.get('missing_fields'):
+                # Ask for missing information
+                missing = plan_result['missing_fields']
+                missing_text = '\n'.join([f'• {field}' for field in missing])
+                
+                # Check if we have some data to suggest
+                if parsed_plan.get('age') and parsed_plan.get('monthly_investment'):
+                    missing_text = f"• time horizon (how many years)"
+                
+                response_data = {
+                    'answer': f"## 📋 Let me help you create a personalized financial plan!\n\nI need a few more details to give you the best recommendations:\n\n{missing_text}\n\n**Please reply with the missing information.**\n\n*Example: \"I'm {parsed_plan.get('age') or 25} years old, can invest ₹{parsed_plan.get('monthly_investment') or 15000} monthly for 10 years to buy a house with medium risk\"*\n\nOr if you'd like, just tell me what you have so far and I'll help fill in the gaps! 💡",
+                    'sources': [],
+                    'data_type': 'info'
+                }
+                self.add_to_conversation_history("assistant", response_data['answer'])
+                return response_data
+        
+        # Then check for stock comparison query
         stock1, stock2 = self.financial_fetcher.detect_comparison_query(query)
         if stock1 and stock2:
             comparison_data = self.financial_fetcher.get_stock_comparison(stock1[1], stock2[1])
@@ -736,7 +878,7 @@ class FinancialRAGEngine:
         
         # If no OpenAI client, return financial data focus message
         if not self.client:
-            fallback_response = "I can help you with real-time Indian market data! Ask me about:\n\n• Nifty 50, Sensex, Bank Nifty\n• Reliance, TCS, Infosys share prices\n• USD to INR exchange rates\n• Gold and commodity prices\n• Stock comparisons (e.g., 'Compare Reliance and TCS')\n• Stock recommendations (e.g., 'Stocks under ₹500')\n\nTry: 'Reliance share price' or 'Compare TCS vs Infosys' or 'Stocks under ₹1000'"
+            fallback_response = "I can help you with real-time Indian market data! Ask me about:\n\n• Nifty 50, Sensex, Bank Nifty\n• Reliance, TCS, Infosys share prices\n• USD to INR exchange rates\n• Gold and commodity prices\n• Stock comparisons (e.g., 'Compare Reliance and TCS')\n• Stock recommendations (e.g., 'Stocks under ₹500')\n• Financial planning (e.g., 'I'm 25, can invest ₹10000 monthly for 10 years')\n\nTry: 'Reliance share price' or 'Compare TCS vs Infosys' or 'Stocks under ₹1000'"
             
             response_data = {
                 'answer': fallback_response,
@@ -759,40 +901,28 @@ class FinancialRAGEngine:
             
             context = "\n\n".join(context_parts) if context_parts else "No relevant financial documents found."
 
-            # Enhanced system prompt
+            # Enhanced system prompt with context awareness
             system_prompt = """You are FinSage, a friendly and conversational financial expert assistant and advisor. Always be polite, responsive, and maintain a natural conversational flow.
 
 **CRITICAL GUIDELINES:**
 
-1. **CONVERSATIONAL & MEMORY:** Make sure when you are starting a new chat, you dont ask any initial question based on the previous chat.Remember previous interactions in the chat and never ask repetitive questions. Build on past conversations naturally.
+1. **CONVERSATIONAL MEMORY:** Remember previous interactions. If the user is following up on a previous plan, acknowledge it and provide the updated calculation.
 
 2. **LIVE DATA HANDLING:** If user asks about current stock prices, market data, commodities, or currencies, provide live data directly based on indian market.
 
-3. **STOCK RECOMMENDATIONS:** When users ask for stocks under specific prices:
-   - Provide real-time price data for affordable stocks
-   - Show current prices, changes, and market caps
-   - Include diversification and risk considerations
-   - Always include proper disclaimers
+3. **FINANCIAL PLANNING:** When users share age, investment amount, and goals:
+   - Create personalized financial plans
+   - Suggest portfolio allocations based on risk profile
+   - Calculate projected wealth
+   - Provide actionable recommendations
 
-4. **STOCK COMPARISONS:** When users ask to compare stocks:
-   - Provide real-time price comparisons with 6-month growth data
-   - Show volatility metrics and price ranges
-   - Highlight the better performer with clear reasoning
-   - Include proper disclaimers about past performance
+4. **FOLLOW-UP QUESTIONS:** If a user asks "what if" questions, modify the previous plan accordingly:
+   - "What if I want it in 8 years?" -> Adjust time horizon
+   - "What about high risk?" -> Change risk profile
+   - "If I invest more?" -> Adjust investment amount
 
-5. **RECOMMENDATIONS:** When users ask for stock/investment recommendations:
-   - Provide educational guidance about options
-   - Explain risk factors, diversification, and research importance
-   - Whatever suggestion you give , make sure if it involves any amount it is in INR, because you are focused on Indian Context
-   - Include disclaimer: "Please conduct your own research"
+5. **FINANCIAL KNOWLEDGE:** For financial concepts, use the provided context to give comprehensive, accurate answers.
 
-6. **FINANCIAL KNOWLEDGE:** For financial concepts, use the provided context to give comprehensive, accurate answers.
-
-7. **OUT-OF-CONTEXT HANDLING:** For non-financial queries, respond politely:
-   "I specialize in financial topics. I'd be happy to help with investments, market updates, stock prices, financial planning, or tax strategies!"
-
-8. **UNKNOWN TOPICS:** If context doesn't cover the question, acknowledge it but provide helpful general financial advice.
-9. **Foreign Countries:** Focus on Indian financial systems, markets, and regulations. Politely inform users if they ask about non-Indian or International contexts.
 **Always maintain:** Professional yet approachable polite tone, personalized responses, and genuine helpfulness within financial expertise boundaries."""
 
             # Build conversation history context
@@ -853,7 +983,7 @@ Please provide a helpful, conversational response following the guidelines above
                     continue
             
             # Fallback if all models fail
-            fallback_answer = "I can help you with live Indian market data, stock comparisons, and stock recommendations! Ask about Nifty, Sensex, specific stock prices, compare stocks like 'Reliance vs TCS', or get stock recommendations like 'stocks under ₹500'. For detailed financial advice, please ensure your API key is properly configured."
+            fallback_answer = "I can help you with live Indian market data, stock comparisons, and financial planning! Ask about Nifty, Sensex, specific stock prices, compare stocks, or get personalized financial plans."
             response_data = {
                 'answer': fallback_answer,
                 'sources': [],
@@ -864,7 +994,7 @@ Please provide a helpful, conversational response following the guidelines above
             
         except Exception as e:
             print(f"Error in RAG processing: {e}")
-            error_response = "I can help you with real-time Indian market data, stock comparisons, and stock recommendations! Try asking about stock prices, market indices, currency rates, compare two stocks, or get stocks under specific prices."
+            error_response = "I can help you with real-time Indian market data, financial planning, and stock recommendations! Try asking about stock prices, market indices, or create a financial plan."
             response_data = {
                 'answer': error_response,
                 'sources': [],
@@ -881,7 +1011,7 @@ Please provide a helpful, conversational response following the guidelines above
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
         
-        # Keep only last 10 conversations to prevent memory issues
+        # Keep only last 20 conversations to prevent memory issues
         if len(self.conversation_history) > 20:
             self.conversation_history = self.conversation_history[-20:]
 
@@ -892,39 +1022,6 @@ Please provide a helpful, conversational response following the guidelines above
     def clear_conversation_history(self):
         """Clear the conversation history"""
         self.conversation_history = []
+        self.last_plan = None
+        self.last_parsed_data = None
         return "Conversation history cleared."
-
-
-# Example usage and testing
-if __name__ == "__main__":
-    print("Testing Enhanced Financial RAG Engine with Stock Recommendations...")
-    
-    if not OPENAI_AVAILABLE:
-        print("❌ OpenAI package not installed. Please run: pip install openai")
-    else:
-        print("✅ OpenAI package available")
-    
-    # Test financial data fetcher with recommendations
-    fetcher = FinancialDataFetcher()
-    test_queries = [
-        "What is Reliance share price?",
-        "Show me gold price",
-        "USD to INR rate",
-        "Compare Reliance and TCS",
-        "TCS vs Infosys performance",
-        "Which is better: HDFC Bank or ICICI Bank?",
-        "Stocks under ₹500",
-        "Recommend stocks below ₹200",
-        "Good stocks under ₹1000",
-        "Affordable shares under ₹300"
-    ]
-    
-    for query in test_queries:
-        print(f"\nQuery: {query}")
-        result = fetcher.process_financial_query(query)
-        if result:
-            print(f"Result: {result[:200]}...")
-        else:
-            print("No financial data result")
-    
-    print("\nEnhanced Financial RAG Engine with stock recommendations defined successfully!")

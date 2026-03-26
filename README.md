@@ -1,205 +1,277 @@
-# 🧠 FinSage - Financial Literacy Platform
+# 🧠 FinSage - AI-Powered Financial Advisor
 
-A comprehensive financial literacy platform with AI-powered chatbot and structured learning modules.
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![React](https://img.shields.io/badge/React-18.0+-blue.svg)](https://reactjs.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.3+-green.svg)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+FinSage is an intelligent financial advisory chatbot that combines RAG (Retrieval-Augmented Generation) with real-time market data and personalized financial planning. It helps users understand financial concepts, track live market data, and create customized investment plans.
+
+## ✨ Features
+
+- 🤖 **AI-Powered Chatbot**: Conversational financial advisor using Groq's LLM
+- 📊 **Real-Time Market Data**: Live stock prices, commodities, currency rates from NSE/BSE
+- 📈 **Personalized Financial Planning**: Goal-based investment recommendations
+- 🎯 **Portfolio Optimization**: Risk-adjusted asset allocation strategies
+- 💾 **Conversation Memory**: Maintains context across multiple messages
+- 🔐 **User Authentication**: Secure login/signup with JWT
+- 📚 **Learning Modules**: Structured financial education content
+- 💬 **Chat History**: Save and manage conversation sessions
 
 ## 🏗️ Architecture
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ React Frontend │────▶│ Flask API │────▶│ RAG Engine │
+│ (Port 3000) │◀────│ (Port 5000) │◀────│ + Vector DB │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+│ │
+▼ ▼
+┌─────────────────┐ ┌─────────────────┐
+│ MongoDB │ │ FAISS │
+│ (Auth/History)│ │ (Knowledge) │
+└─────────────────┘ └─────────────────┘
 
-**Hybrid Approach**: Streamlit Backend + React Frontend
 
-- **Backend**: Streamlit with Flask API server
-- **Frontend**: React with Material-UI
-- **Database**: FAISS/ChromaDB for vector storage
-- **AI**: Groq API for intelligent responses
+
+**Tech Stack:**
+- **Backend**: Flask, Python 3.9+
+- **Frontend**: React 18, Material-UI
+- **AI/ML**: Groq API, Sentence Transformers, FAISS
+- **Database**: MongoDB (auth/history), FAISS (vector embeddings)
+- **Data Sources**: yfinance for live market data
 
 ## 🚀 Quick Start
 
-### 1. Setup Backend
+### Prerequisites
 
-```bash
-# Navigate to project directory
-cd "finsage with yfin - Copy"
+- Python 3.9 or higher
+- Node.js 16 or higher
+- MongoDB account (free tier works)
+- Groq API key (free signup at [groq.com](https://groq.com))
 
-# Install Python dependencies
+### 1. Clone the Repository
+
+```
+git clone https://github.com/Ananya-hub123/finsage-web.git
+cd finsage-web
+2. Backend Setup
+Create and Activate Virtual Environment
+
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Mac/Linux
+python3 -m venv venv
+source venv/bin/activate
+Install Python Dependencies
+
 pip install -r requirements.txt
+Configure Environment Variables
+Create a .env file in the root directory:
 
-# Set up environment variables
-# Create .env file with:
-GROQ_API_KEY=your_groq_api_key_here
+env
+# MongoDB Configuration (from MongoDB Atlas)
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/finsage
 
-# Start the backend server
-python api_server.py
-```
+# JWT Secret (any strong random string)
+JWT_SECRET_KEY=your-super-secret-jwt-key-here
 
-The backend will run on:
-- **Streamlit**: http://localhost:8501
-- **API Server**: http://localhost:5000
+# Groq API Key (from https://console.groq.com)
+GROQ_API_KEY=gsk_your-groq-api-key-here
 
-### 2. Setup Frontend
+# Token expiry (optional)
+TOKEN_EXPIRATION_HOURS=24
+3. Frontend Setup
 
-```bash
-# Navigate to frontend directory
 cd frontend
-
-# Install Node.js dependencies
 npm install
+4. Run the Application
+Start Backend Server (Terminal 1)
 
-# Start React development server
+# From project root
+python api_server.py
+Expected output:
+
+
+✅ Chatbot initialized successfully
+🚀 Starting API server on port 5000...
+✅ API server is running on http://localhost:5000
+Start Frontend Development Server (Terminal 2)
+
+cd frontend
 npm start
-```
+The application will open at http://localhost:3000
 
-The frontend will run on: http://localhost:3000
+5. Test the Application
+Sign Up for a new account
 
-## 📁 Project Structure
+Login with your credentials
 
-```
-finsage with yfin - Copy/
-├── api_server.py              # Main backend server (Streamlit + Flask API)
-├── src/                       # Chatbot engine components
-│   ├── enhanced_rag_engine.py
-│   ├── vector_db_manager.py
-│   └── markdown_processor.py
-├── financial corpus/          # Learning content
+Start Chatting with the AI:
+
+Try these example prompts:
+
+"What is compound interest?"
+
+"Show me Reliance share price"
+
+"I'm 25, earn ₹40,000, can invest ₹15,000 monthly for 10 years to buy a house"
+
+📁 Project Structure
+
+finsage-web/
+├── api_server.py              # Main Flask API server
+├── app.py                     # Streamlit app (alternative UI)
+├── requirements.txt           # Python dependencies
+├── .env                       # Environment variables (create this)
+│
+├── src/                       # Backend core modules
+│   ├── enhanced_rag_engine.py # Main chatbot logic
+│   ├── portfolio_advisor_new.py # Financial planning engine
+│   ├── vector_db_manager.py   # FAISS vector database
+│   ├── financial_data.py      # yfinance integration
+│   ├── auth_routes.py         # Authentication endpoints
+│   └── user_schema.py         # MongoDB user models
+│
 ├── frontend/                  # React frontend
-│   ├── package.json
 │   ├── public/
+│   │   └── index.html
 │   └── src/
-│       ├── components/
-│       │   ├── Chat/
-│       │   └── Layout/
-│       ├── pages/
-│       └── services/
-└── requirements.txt
-```
+│       ├── components/        # Reusable UI components
+│       │   ├── Auth/          # Login/Signup
+│       │   ├── Chat/          # Chat interface
+│       │   └── Dashboard/     # User dashboard
+│       ├── pages/             # Main pages
+│       │   ├── Chat.jsx
+│       │   ├── Learn.jsx
+│       │   └── Home.jsx
+│       └── services/          # API calls
+│           └── authAPI.js
+│
+├── financial corpus/          # Educational content (markdown files)
+└── faiss_db/                  # FAISS vector storage (auto-generated)
+🔧 API Endpoints
+Chat
+Method	Endpoint	Description
+POST	/api/chat	Send message to chatbot
+GET	/api/health	Health check
+Authentication
+Method	Endpoint	Description
+POST	/api/auth/register	Create new account
+POST	/api/auth/login	Login user
+GET	/api/auth/profile	Get user profile
+Syllabus & Content
+Method	Endpoint	Description
+GET	/api/syllabus	Get learning modules
+GET	/api/content/{path}	Get module content
+💡 Key Features Explained
+1. Financial Planning Engine
+The portfolio advisor extracts information from natural language queries:
 
-## 🔌 API Endpoints
+Age & Salary: For risk assessment
 
-### Chat API
-```
-POST /api/chat
-{
-  "message": "What is compound interest?"
-}
+Investment Amount: Monthly SIP calculation
 
-Response:
-{
-  "answer": "Compound interest is...",
-  "timestamp": 1234567890
-}
-```
+Time Horizon: Future value projection
 
-### Syllabus API
-```
-GET /api/syllabus
+Risk Profile: Conservative, Moderate, Aggressive
 
-Response: Complete syllabus structure with modules and lessons
-```
+Goals: House, retirement, education, etc.
 
-### Health Check
-```
-GET /api/health
+2. Real-Time Market Data
+Stocks: Live prices, 52-week highs/lows, market cap
 
-Response:
-{
-  "status": "healthy",
-  "chatbot_ready": true
-}
-```
+Indices: Nifty 50, Sensex, Bank Nifty
 
-## 🎯 Features
+Commodities: Gold, silver, crude oil (international + Indian prices)
 
-### 📚 Learning Modules
-- **Financial Basics**: Money concepts, banking fundamentals
-- **Personal Finance**: Budgeting, saving, debt management
-- **Investments**: Stocks, mutual funds, portfolio management
-- **Life Stage Content**: Tailored for students, professionals, seniors
+Currency: USD/INR, EUR/INR exchange rates
 
-### 🤖 AI Chatbot
-- Real-time financial assistance
-- Context-aware responses
-- Integration with financial knowledge base
+3. RAG (Retrieval-Augmented Generation)
+FAISS vector database stores 500+ financial documents
 
-### 🎨 Modern UI
-- Material-UI components
-- Responsive design
-- Interactive learning progress tracking
+Sentence Transformers for semantic search
 
-## 🛠️ Development
+Groq's LLM for natural responses
 
-### Backend Development
-- The `api_server.py` runs both Streamlit and Flask API
-- Chatbot components are in the `src/` directory
-- Vector database stores processed financial content
+Conversation memory for context retention
 
-### Frontend Development
-- React components in `frontend/src/`
-- API integration via `services/api.js`
-- Material-UI for consistent styling
+🧪 Testing the Application
+Test Financial Planning
 
-## 🔧 Configuration
+User: I'm 28 years old, earn ₹50,000 monthly. I can invest ₹20,000 monthly. I want to buy a house in 12 years with moderate risk.
 
-### Environment Variables
-Create a `.env` file in the root directory:
-```
-GROQ_API_KEY=your_groq_api_key
-GOOGLE_APPLICATION_CREDENTIALS=path_to_service_account.json
-```
+AI: [Generates personalized portfolio with allocation, projected wealth, and actionable recommendations]
+Test Follow-up Questions
 
-### Database Setup
-1. Ensure financial content is in `financial corpus/`
-2. Run the backend to automatically populate vector database
-3. Check API health at http://localhost:5000/api/health
+User: What if I want it in 8 years instead?
 
-## 📱 Usage
+AI: [Recalculates with 8-year horizon while keeping other parameters]
+Test Market Data
 
-1. **Start Learning**: Browse syllabus modules on the Learn page
-2. **Ask Questions**: Use the AI chatbot for personalized help
-3. **Track Progress**: Monitor your learning journey
-4. **Explore Topics**: Navigate through different financial concepts
+User: What's Reliance share price today?
 
-## 🤝 Contributing
+AI: [Returns live price, change %, and market cap]
+🛠️ Troubleshooting
+Common Issues & Solutions
+Issue	Solution
+Port 5000 already in use	Kill process: netstat -ano | findstr :5000 then taskkill /PID <PID> /F
+Module not found errors	Run pip install -r requirements.txt again
+MongoDB connection error	Check .env URI and whitelist IP in MongoDB Atlas
+Groq API key invalid	Verify API key at console.groq.com
+FAISS database empty	Run python src/markdown_processor.py to process content
+Port Conflicts
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test both backend and frontend
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-**Backend not starting:**
-- Check Python dependencies: `pip install -r requirements.txt`
-- Verify environment variables in `.env` file
-- Check port availability (5000, 8501)
-
-**Frontend not connecting:**
-- Ensure backend is running on port 5000
-- Check CORS configuration in `api_server.py`
-- Verify React proxy settings in `package.json`
-
-**Chatbot not responding:**
-- Check Groq API key validity
-- Verify vector database has documents
-- Check API server logs for errors
-
-### Port Conflicts
-If ports are occupied:
-```bash
-# Kill processes on ports 5000 and 8501
+# Windows PowerShell
 netstat -ano | findstr :5000
-netstat -ano | findstr :8501
+netstat -ano | findstr :3000
+
+# Kill process
 taskkill /PID <PID> /F
-```
+📦 Deployment
+Backend Deployment (Heroku/Railway)
 
-## 📞 Support
+# Create Procfile
+echo "web: gunicorn api_server:app" > Procfile
 
+# Deploy to Heroku
+heroku create finsage-api
+git push heroku main
+Frontend Deployment (Vercel/Netlify)
+
+cd frontend
+npm run build
+# Deploy the build/ folder to Vercel/Netlify
+🤝 Contributing
+Fork the repository
+
+Create feature branch: git checkout -b feature/amazing-feature
+
+Commit changes: git commit -m 'Add amazing feature'
+
+Push: git push origin feature/amazing-feature
+
+Open Pull Request
+
+📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+🙏 Acknowledgments
+Groq for providing fast LLM inference
+
+yfinance for market data
+
+Sentence Transformers for embeddings
+
+FAISS for vector search
+
+Material-UI for beautiful components
+
+📞 Support
 For issues and questions:
-1. Check this README
-2. Review API documentation
-3. Check browser console for frontend errors
-4. Review backend logs for API errors
+
+Check GitHub Issues
+
+Review API logs in terminal
+
+Check browser console for frontend errors

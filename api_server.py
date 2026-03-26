@@ -81,6 +81,13 @@ def chat():
         })
         
     except Exception as e:
+        # Print full error to console for debugging
+        import traceback
+        print("="*50)
+        print("ERROR IN CHAT ENDPOINT:")
+        print("="*50)
+        traceback.print_exc()
+        print("="*50)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
