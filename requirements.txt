@@ -1,16 +1,42 @@
-chromadb>=0.4.0
-openai>=1.0.0
-python-dotenv>=1.0.0
-python-frontmatter>=1.0.0
-regex>=2023.0.0
-streamlit>=1.28.0
+
+# Core Framework
 flask>=2.3.0
 flask-cors>=4.0.0
-faiss-cpu>=1.7.4
-sentence-transformers>=2.2.2
+streamlit>=1.28.0
+
+# AI & ML
+openai>=1.0.0
 groq>=0.4.1
-pyngrok>=7.0.0
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
+transformers>=4.41.0
+torch>=2.0.0
+
+# Vector Database
+chromadb>=0.4.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+regex>=2023.0.0
+python-frontmatter>=1.0.0
+
+# Financial Data
 yfinance>=0.2.18
+PyPortfolioOpt>=1.5.0
+
+# Database
 pymongo>=4.6.0
+
+# Authentication
 bcrypt>=4.0.0
 python-jose[cryptography]>=3.3.0
+
+# Environment & Utilities
+python-dotenv>=1.0.0
+pyngrok>=7.0.0
+
+# Additional Utilities
+requests>=2.31.0
+typing-extensions>=4.5.0
