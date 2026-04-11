@@ -90,6 +90,59 @@ def chat():
         print("="*50)
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/translate', methods=['POST'])
+def translate():
+    """Dedicated Hindi translation endpoint - bypasses RAG, calls Groq directly with high token limit"""
+    try:
+        data = request.json
+        content = data.get('content', '')
+
+        if not content:
+            return jsonify({'error': 'Content is required'}), 400
+
+        api_key = os.getenv('GROQ_API_KEY')
+        if not api_key:
+            return jsonify({'error': 'GROQ_API_KEY not set'}), 500
+
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
+
+        models = ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768', 'llama3-70b-8192']
+
+        system_prompt = """तुम एक expert Hindi translator हो जो financial education content को translate करता है।
+Rules:
+1. पूरे content को fluent, natural Hindi में translate करो
+2. Markdown formatting (##, **, -, *, >, etc.) बिल्कुल preserve करो
+3. Financial terms जैसे SIP, NAV, EMI, GDP, Nifty, Sensex को as-is रखो
+4. Numbers और percentages जैसे रखो
+5. कोई extra comment, preamble या explanation मत दो - सिर्फ translated markdown दो
+6. पूरा content translate करो, बीच में मत रुको"""
+
+        for model in models:
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"इस पूरे financial content को Hindi में translate करो:\n\n{content}"}
+                    ],
+                    temperature=0.3,
+                    max_tokens=4000
+                )
+                translated = response.choices[0].message.content
+                return jsonify({'translated': translated})
+            except Exception as model_error:
+                print(f"Model {model} failed: {model_error}")
+                continue
+
+        return jsonify({'error': 'All models failed'}), 500
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/health', methods=['GET'])
 def health():
     """Health check endpoint"""

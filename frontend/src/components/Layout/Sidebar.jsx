@@ -26,26 +26,28 @@ import {
   ChevronLeft,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 
 const drawerWidth = 280;
 
 const Sidebar = ({ open, onToggle }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const menuItems = [
-    { icon: <Dashboard />, text: 'Dashboard', path: '/' },
-    { icon: <School />, text: 'Financial Basics', path: '/learn/basics' },
-    { icon: <AccountBalance />, text: 'Personal Finance', path: '/learn/personal-finance' },
-    { icon: <TrendingUp />, text: 'Investments', path: '/learn/investments' },
-    { icon: <People />, text: 'For Students', path: '/learn/students' },
-    { icon: <Work />, text: 'For Professionals', path: '/learn/professionals' },
-    { icon: <Home />, text: 'For Homemakers', path: '/learn/homemakers' },
-    { icon: <Elderly />, text: 'For Seniors', path: '/learn/seniors' },
-    { icon: <Psychology />, text: 'Behavioral Finance', path: '/learn/behavioral' },
+    { icon: <Dashboard />, text: t('dashboard'), path: '/' },
+    { icon: <School />, text: t('financialBasics'), path: '/learn/basics' },
+    { icon: <AccountBalance />, text: t('personalFinance'), path: '/learn/personal-finance' },
+    { icon: <TrendingUp />, text: t('investments'), path: '/learn/investments' },
+    { icon: <People />, text: t('forStudents'), path: '/learn/students' },
+    { icon: <Work />, text: t('forProfessionals'), path: '/learn/professionals' },
+    { icon: <Home />, text: t('forHomemakers'), path: '/learn/homemakers' },
+    { icon: <Elderly />, text: t('forSeniors'), path: '/learn/seniors' },
+    { icon: <Psychology />, text: t('behavioralFinance'), path: '/learn/behavioral' },
   ];
 
   const secondaryMenuItems = [
-    { icon: <Person />, text: 'My Profile', path: '/profile' },
+    { icon: <Person />, text: t('myProfile'), path: '/profile' },
   ];
 
   return (
@@ -93,7 +95,7 @@ const Sidebar = ({ open, onToggle }) => {
 
       <Box sx={{ p: 2, pr: 4 }}>
         <Typography variant="h6" color="primary" gutterBottom>
-          📚 Learning Path
+          {t('learningPath')}
         </Typography>
        
       </Box>
@@ -161,10 +163,10 @@ const Sidebar = ({ open, onToggle }) => {
       
       <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
         <Typography variant="subtitle2" gutterBottom>
-          💡 Pro Tip
+          {t('proTip')}
         </Typography>
         <Typography variant="body2">
-          Start with Financial Basics if you're new to finance!
+          {t('proTipText')}
         </Typography>
       </Box>
     </Drawer>

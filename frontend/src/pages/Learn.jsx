@@ -14,9 +14,9 @@ import {
   Chip,
   Grid,
   Card,
-  CardContent,
 } from '@mui/material';
 import { useParams, useLocation } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   School, 
   AutoAwesome, 
@@ -25,9 +25,6 @@ import {
   Psychology,
   Lightbulb,
   EmojiEvents,
-  Speed,
-  Star,
-  ArrowForward,
   Refresh,
 } from '@mui/icons-material';
 import { syllabusAPI } from '../services/api';
@@ -43,6 +40,7 @@ const Learn = () => {
   const [error, setError] = useState('');
   const [selectedModule, setSelectedModule] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadSyllabus();
@@ -231,42 +229,12 @@ const Learn = () => {
                   fontWeight: 500,
                 }}
               >
-                Loading financial literacy content...
+                {t("loadingContent")}
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Chip
-                  icon={<School />}
-                  label="Expert Content"
-                  sx={{
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                    color: 'white',
-                    fontWeight: 600,
-                    px: 2,
-                    py: 1,
-                  }}
-                />
-                <Chip
-                  icon={<AutoAwesome />}
-                  label="Interactive Learning"
-                  sx={{
-                    background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
-                    color: 'white',
-                    fontWeight: 600,
-                    px: 2,
-                    py: 1,
-                  }}
-                />
-                <Chip
-                  icon={<TrendingUp />}
-                  label="Step-by-Step Progress"
-                  sx={{
-                    background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
-                    color: 'white',
-                    fontWeight: 600,
-                    px: 2,
-                    py: 1,
-                  }}
-                />
+                <Chip icon={<School />} label={t('expertContent')} sx={{ background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`, color: 'white', fontWeight: 600, px: 2, py: 1 }} />
+                <Chip icon={<AutoAwesome />} label={t('interactiveLearning')} sx={{ background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`, color: 'white', fontWeight: 600, px: 2, py: 1 }} />
+                <Chip icon={<TrendingUp />} label={t('stepByStep')} sx={{ background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`, color: 'white', fontWeight: 600, px: 2, py: 1 }} />
               </Box>
             </Paper>
           </Fade>
@@ -435,7 +403,7 @@ const Learn = () => {
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 6 }}>
                 <Chip
                   icon={<School />}
-                  label="Expert Content"
+                  label={t("expertContent")}
                   sx={{
                     background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                     color: 'white',
@@ -448,7 +416,7 @@ const Learn = () => {
                 />
                 <Chip
                   icon={<AutoAwesome />}
-                  label="Interactive Learning"
+                  label={t("interactiveLearning")}
                   sx={{
                     background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
                     color: 'white',
@@ -461,7 +429,7 @@ const Learn = () => {
                 />
                 <Chip
                   icon={<TrendingUp />}
-                  label="Step-by-Step Progress"
+                  label={t("stepByStep")}
                   sx={{
                     background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
                     color: 'white',
@@ -474,7 +442,7 @@ const Learn = () => {
                 />
                 <Chip
                   icon={<Psychology />}
-                  label="Practical Skills"
+                  label={t("practicalSkills")}
                   sx={{
                     background: `linear-gradient(135deg, ${theme.palette.info.main} 0%, ${theme.palette.info.dark} 100%)`,
                     color: 'white',
@@ -534,7 +502,7 @@ const Learn = () => {
                 letterSpacing: '-0.5px',
               }}
             >
-              📊 Your Learning Journey
+              {t('yourLearningJourney')}
             </Typography>
             
             <Grid container spacing={4}>

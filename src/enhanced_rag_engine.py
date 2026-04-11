@@ -902,6 +902,14 @@ class FinancialRAGEngine:
             context = "\n\n".join(context_parts) if context_parts else "No relevant financial documents found."
 
             # Enhanced system prompt with context awareness
+            # Detect language mode from query prefix
+            language_instruction = ""
+            actual_query = query
+            if query.startswith("तुम एक हिंदी वित्तीय सलाहकार"):
+                language_instruction = "\n\n**LANGUAGE:** You MUST reply ONLY in Hindi (हिंदी). No English at all."
+            else:
+                language_instruction = "\n\n**LANGUAGE:** You MUST reply ONLY in English. Do not use Hindi or any other language even if previous messages were in Hindi."
+
             system_prompt = """You are FinSage, a friendly and conversational financial expert assistant and advisor. Always be polite, responsive, and maintain a natural conversational flow.
 
 **CRITICAL GUIDELINES:**
@@ -923,7 +931,7 @@ class FinancialRAGEngine:
 
 5. **FINANCIAL KNOWLEDGE:** For financial concepts, use the provided context to give comprehensive, accurate answers.
 
-**Always maintain:** Professional yet approachable polite tone, personalized responses, and genuine helpfulness within financial expertise boundaries."""
+**Always maintain:** Professional yet approachable polite tone, personalized responses, and genuine helpfulness within financial expertise boundaries.""" + language_instruction
 
             # Build conversation history context
             history_context = ""
@@ -936,11 +944,17 @@ class FinancialRAGEngine:
                     else:
                         history_context += f"Assistant: {msg['content']}\n"
 
+            # Strip Hindi wrapper to get clean user message for the prompt
+            if query.startswith("तुम एक हिंदी वित्तीय सलाहकार"):
+                import re
+                match = re.search(r'उपयोगकर्ता का संदेश: "(.+)"$', query, re.DOTALL)
+                actual_query = match.group(1) if match else query
+
             prompt = f"""CONTEXT FROM FINANCIAL DOCUMENTS:
 {context}
 {history_context}
 
-USER QUESTION: {query}
+USER QUESTION: {actual_query}
 
 Please provide a helpful, conversational response following the guidelines above."""
 

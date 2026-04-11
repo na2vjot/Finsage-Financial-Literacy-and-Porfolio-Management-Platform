@@ -37,17 +37,19 @@ import {
   Lock,
 } from '@mui/icons-material';
 import { chatAPI, chatHistoryAPI } from '../../services/authAPI';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ChatInterface = () => {
   const theme = useTheme();
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "👋 Welcome to your Personal Financial Advisor!\n\nI'm here to help you navigate your financial journey with confidence. Ask me about:\n\n💰 Budgeting & Saving Strategies\n📈 Investment Opportunities & Portfolio Management\n🏦 Banking & Credit Management\n🎓 Financial Planning for Different Life Stages\n🧠 Behavioral Finance & Money Psychology\n\nWhat financial topic would you like to explore today?",
-      sender: 'bot',
-      timestamp: new Date(),
-    }
-  ]);
+  const { t, isHindi } = useLanguage();
+  const getWelcomeMessage = () => ({
+    id: 1,
+    text: t('chatWelcome'),
+    sender: 'bot',
+    timestamp: new Date(),
+  });
+
+  const [messages, setMessages] = useState([getWelcomeMessage()]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -237,18 +239,10 @@ const ChatInterface = () => {
   };
 
   const startNewChat = () => {
-    // Save current chat if it exists
     if (currentChatId && messages.length > 1) {
       saveCurrentChatToHistory();
     }
-
-    // Reset to new chat
-    setMessages([{
-      id: 1,
-      text: "👋 Welcome to your Personal Financial Advisor!\n\nI'm here to help you navigate your financial journey with confidence. Ask me about:\n\n💰 Budgeting & Saving Strategies\n📈 Investment Opportunities & Portfolio Management\n🏦 Banking & Credit Management\n🎓 Financial Planning for Different Life Stages\n🧠 Behavioral Finance & Money Psychology\n\nWhat financial topic would you like to explore today?",
-      sender: 'bot',
-      timestamp: new Date(),
-    }]);
+    setMessages([getWelcomeMessage()]);
     setCurrentChatId(null);
   };
 
@@ -402,13 +396,10 @@ const ChatInterface = () => {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !user) {
-      if (!user) {
-        setError('Please log in to send messages');
-      }
+      if (!user) setError(t('loginToSend'));
       return;
     }
 
-    // Create new chat if this is the first message and no chat exists
     if (!currentChatId && messages.length === 1) {
       createNewChatAndSave();
     }
@@ -421,17 +412,20 @@ const ChatInterface = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    
-    // Save user message to database
     await saveMessageToDatabase(inputMessage, 'user');
-    
     setInputMessage('');
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await chatAPI.sendMessage(inputMessage);
-      
+      // If Hindi mode is ON, wrap the user message with a Hindi instruction
+      // so the AI always responds in Hindi regardless of how the user typed
+      const messageToSend = isHindi
+        ? `तुम एक हिंदी वित्तीय सलाहकार हो। उपयोगकर्ता ने हिंगलिश (अंग्रेजी अक्षरों में हिंदी) में लिखा है। उनका संदेश समझो और पूरा जवाब केवल हिंदी में दो। उपयोगकर्ता का संदेश: "${inputMessage}"`
+        : inputMessage;
+
+      const response = await chatAPI.sendMessage(messageToSend);
+
       const botMessage = {
         id: Date.now() + 1,
         text: response.answer,
@@ -440,10 +434,7 @@ const ChatInterface = () => {
       };
 
       setMessages(prev => [...prev, botMessage]);
-      
-      // Save bot message to database
       await saveMessageToDatabase(response.answer, 'bot');
-      
     } catch (err) {
       setError(err.message || 'Failed to send message');
     } finally {
@@ -491,7 +482,7 @@ const ChatInterface = () => {
               fontSize: '1.1rem',
               letterSpacing: '-0.5px',
             }}>
-              Conversation History
+              {t("conversationHistory")}
             </Typography>
           </Box>
           <Button
@@ -528,7 +519,7 @@ const ChatInterface = () => {
               <Box sx={{ textAlign: 'center', mt: 8, px: 3 }}>
                 <Lock sx={{ fontSize: 56, color: 'text.secondary', mb: 3, opacity: 0.6 }} />
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 2, fontSize: '1.1rem', fontWeight: 600 }}>
-                  Please Log In
+                  {t("pleaseLogIn")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
                   You need to be logged in to access<br/>
@@ -726,7 +717,7 @@ const ChatInterface = () => {
                 fontSize: '1.4rem', 
                 letterSpacing: '-0.5px',
               }}>
-                💰 AI Financial Advisor
+                {t("aiFinancialAdvisor")}
               </Typography>
               <Typography variant="body2" sx={{ 
                 opacity: 0.95, 
@@ -734,7 +725,7 @@ const ChatInterface = () => {
                 lineHeight: 1.4,
                 fontWeight: 500,
               }}>
-                Your intelligent companion for smart financial decisions
+                {t("aiAdvisorSubtitle")}
               </Typography>
             </Box>
             <Chip 
@@ -885,7 +876,7 @@ const ChatInterface = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <CircularProgress size={18} thickness={4} />
                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 500 }}>
-                      Thinking...
+                      {t("thinking")}
                     </Typography>
                   </Box>
                 </Paper>
@@ -913,7 +904,7 @@ const ChatInterface = () => {
               multiline
               maxRows={4}
               variant="outlined"
-              placeholder="💬 Ask me anything about budgeting, investing, saving, or financial planning..."
+              placeholder={t('chatPlaceholder')}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}

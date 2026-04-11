@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { MenuOpen } from '@mui/icons-material';
+import { LanguageProvider } from './context/LanguageContext';
 
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
@@ -36,6 +37,7 @@ function App() {
     setSidebarOpen(!sidebarOpen);
   };
   return (
+    <LanguageProvider>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
@@ -106,6 +108,7 @@ function App() {
         </Routes>
       </Router>
     </ThemeProvider>
+    </LanguageProvider>
   );
 }
 

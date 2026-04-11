@@ -1,16 +1,10 @@
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Link,
-  Divider,
-} from '@mui/material';
-import {
-  Email,
-  School,
-} from '@mui/icons-material';
+import { Box, Typography, Link, Divider } from '@mui/material';
+import { Email, School } from '@mui/icons-material';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Footer = () => {
+  const { t } = useLanguage();
   return (
     <Box
       component="footer"
@@ -52,7 +46,7 @@ const Footer = () => {
                 🧠 FinSage
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                © {new Date().getFullYear()} FinSage. All rights reserved.
+                © {new Date().getFullYear()} FinSage. {t('allRightsReserved')}
               </Typography>
             </Box>
           </Box>
@@ -75,17 +69,8 @@ const Footer = () => {
             >
               <Email sx={{ color: 'primary.main', fontSize: 20 }} />
               <Typography variant="body2" color="text.secondary">
-                Contact us:{' '}
-                <Link
-                  href="mailto:finsage@gmail.com"
-                  color="primary"
-                  sx={{
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
-                  }}
-                >
+                {t('contactUs')}{' '}
+                <Link href="mailto:finsage@gmail.com" color="primary" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                   finsage@gmail.com
                 </Link>
               </Typography>
@@ -102,7 +87,7 @@ const Footer = () => {
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            Empowering financial literacy through innovative learning solutions
+            {t('footerTagline')}
           </Typography>
         </Box>
       </Box>

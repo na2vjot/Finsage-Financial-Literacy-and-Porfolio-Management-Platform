@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -19,8 +19,10 @@ import {
   BookmarkBorder,
   CheckCircle,
   NavigateNext,
+  Translate,
 } from '@mui/icons-material';
 import { syllabusAPI } from '../../services/api';
+import { useLanguage } from '../../context/LanguageContext';
 import ReactMarkdown from 'react-markdown';
 
 const ContentViewer = ({ moduleId, onBack, onNextModule }) => {
@@ -32,78 +34,90 @@ const ContentViewer = ({ moduleId, onBack, onNextModule }) => {
   const [nextModule, setNextModule] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
 
-  const loadCompletionStatus = (moduleId) => {
-    const completedModules = JSON.parse(localStorage.getItem('completedModules') || '[]');
-    setIsCompleted(completedModules.includes(moduleId));
+  // Translation state
+  const [translatedContent, setTranslatedContent] = useState(null);
+  const [translating, setTranslating] = useState(false);
+  const [translationError, setTranslationError] = useState(false);
+  const translateCalledRef = useRef(false); // prevent double calls
+
+  const { isHindi } = useLanguage();
+
+  const loadCompletionStatus = (id) => {
+    const completed = JSON.parse(localStorage.getItem('completedModules') || '[]');
+    setIsCompleted(completed.includes(id));
   };
 
   const findNextModuleInSyllabus = (currentModuleId, syllabus) => {
-    // Flatten all modules from all sections
     const allModules = [];
-    
     Object.keys(syllabus).forEach(sectionKey => {
       const section = syllabus[sectionKey];
-      
       if (section.modules) {
         section.modules.forEach(module => {
           if (module.submodules) {
-            // Handle modules with submodules
-            module.submodules.forEach(submodule => {
-              allModules.push({
-                id: submodule.id,
-                title: submodule.title,
-                file: submodule.file,
-                section: sectionKey,
-                parentModule: module.id
-              });
+            module.submodules.forEach(sub => {
+              allModules.push({ id: sub.id, title: sub.title, file: sub.file, section: sectionKey });
             });
           } else {
-            // Handle direct modules
-            allModules.push({
-              id: module.id,
-              title: module.title,
-              file: module.file,
-              section: sectionKey
-            });
+            allModules.push({ id: module.id, title: module.title, file: module.file, section: sectionKey });
           }
         });
       }
     });
-
-    // Find current module index
-    const currentIndex = allModules.findIndex(module => 
-      module.file === currentModuleId || module.id === currentModuleId
-    );
-
-    // Return next module if exists
-    if (currentIndex !== -1 && currentIndex < allModules.length - 1) {
-      return allModules[currentIndex + 1];
-    }
-
-    return null;
+    const idx = allModules.findIndex(m => m.file === currentModuleId || m.id === currentModuleId);
+    return idx !== -1 && idx < allModules.length - 1 ? allModules[idx + 1] : null;
   };
 
-  const findNextModule = useCallback(async (currentModuleId) => {
+  const findNextModule = useCallback(async (id) => {
     try {
       const syllabus = await syllabusAPI.getSyllabus();
-      const next = findNextModuleInSyllabus(currentModuleId, syllabus);
-      setNextModule(next);
+      setNextModule(findNextModuleInSyllabus(id, syllabus));
     } catch (err) {
       console.error('Failed to find next module:', err);
     }
   }, []);
 
-  const loadContent = useCallback(async (moduleId) => {
-    setLoading(true);
+  const translateContent = useCallback(async (rawContent) => {
+    setTranslating(true);
+    setTranslationError(false);
+    setTranslatedContent(null);
+    console.log('🌐 Starting translation, content length:', rawContent.length);
+
     try {
-      const data = await syllabusAPI.getContent(moduleId);
+      const response = await fetch('http://localhost:5000/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: rawContent }),
+      });
+
+      const data = await response.json();
+      console.log('✅ Translation response:', data);
+
+      if (data.translated) {
+        setTranslatedContent(data.translated);
+        console.log('✅ Translation set, length:', data.translated.length);
+      } else {
+        throw new Error(data.error || 'No translated field in response');
+      }
+    } catch (err) {
+      console.error('❌ Translation failed:', err);
+      setTranslationError(true);
+      setSnackbar({ open: true, message: 'अनुवाद विफल हुआ। मूल सामग्री दिखाई जा रही है।' });
+    } finally {
+      setTranslating(false);
+    }
+  }, []);
+
+  const loadContent = useCallback(async (id) => {
+    setLoading(true);
+    setTranslatedContent(null);
+    setTranslationError(false);
+    translateCalledRef.current = false;
+
+    try {
+      const data = await syllabusAPI.getContent(id);
       setContent(data);
-      
-      // Load completion status
-      loadCompletionStatus(moduleId);
-      
-      // Find next module
-      findNextModule(moduleId);
+      loadCompletionStatus(id);
+      findNextModule(id);
     } catch (err) {
       setError(err.message || 'Failed to load content');
     } finally {
@@ -112,31 +126,41 @@ const ContentViewer = ({ moduleId, onBack, onNextModule }) => {
   }, [findNextModule]);
 
   useEffect(() => {
-    if (moduleId) {
-      loadContent(moduleId);
-    }
+    if (moduleId) loadContent(moduleId);
   }, [moduleId, loadContent]);
 
-  const toggleBookmark = () => {
-    setBookmarked(!bookmarked);
-    // TODO: Save bookmark state to backend
-  };
+  // Trigger translation when: Hindi is ON AND content is loaded AND not already translated/translating
+  useEffect(() => {
+    if (
+      isHindi &&
+      content?.content &&
+      !translatedContent &&
+      !translating &&
+      !translateCalledRef.current
+    ) {
+      translateCalledRef.current = true;
+      translateContent(content.content);
+    }
+
+    if (!isHindi) {
+      setTranslatedContent(null);
+      setTranslationError(false);
+      translateCalledRef.current = false;
+    }
+  }, [isHindi, content, translatedContent, translating, translateContent]);
+
+  const toggleBookmark = () => setBookmarked(!bookmarked);
 
   const handleMarkAsComplete = () => {
-    const completedModules = JSON.parse(localStorage.getItem('completedModules') || '[]');
-    
-    if (!completedModules.includes(moduleId)) {
-      completedModules.push(moduleId);
-      localStorage.setItem('completedModules', JSON.stringify(completedModules));
+    const completed = JSON.parse(localStorage.getItem('completedModules') || '[]');
+    if (!completed.includes(moduleId)) {
+      completed.push(moduleId);
+      localStorage.setItem('completedModules', JSON.stringify(completed));
       setIsCompleted(true);
-      setSnackbar({ open: true, message: '✅ Module marked as complete!' });
-      
-      // Dispatch custom event to notify other components (like SyllabusGrid)
-      window.dispatchEvent(new CustomEvent('moduleCompleted', {
-        detail: { type: 'MODULE_COMPLETED', moduleId: moduleId }
-      }));
+      setSnackbar({ open: true, message: isHindi ? '✅ मॉड्यूल पूर्ण हो गया!' : '✅ Module marked as complete!' });
+      window.dispatchEvent(new CustomEvent('moduleCompleted', { detail: { type: 'MODULE_COMPLETED', moduleId } }));
     } else {
-      setSnackbar({ open: true, message: 'Module already completed!' });
+      setSnackbar({ open: true, message: isHindi ? 'मॉड्यूल पहले ही पूर्ण हो चुका है!' : 'Module already completed!' });
     }
   };
 
@@ -144,37 +168,26 @@ const ContentViewer = ({ moduleId, onBack, onNextModule }) => {
     if (nextModule && onNextModule) {
       onNextModule(nextModule.file, nextModule);
     } else {
-      setSnackbar({ open: true, message: 'No next module available!' });
+      setSnackbar({ open: true, message: isHindi ? 'कोई अगला मॉड्यूल उपलब्ध नहीं!' : 'No next module available!' });
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+  // Decide what content to render
+  const displayContent = isHindi && translatedContent
+    ? translatedContent          // Hindi translated version
+    : content?.content;          // Original English
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4, gap: 2 }}>
         <CircularProgress />
+        <Typography color="text.secondary">{isHindi ? 'सामग्री लोड हो रही है...' : 'Loading content...'}</Typography>
       </Box>
     );
   }
 
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        {error}
-      </Alert>
-    );
-  }
-
-  if (!content) {
-    return (
-      <Alert severity="info" sx={{ m: 2 }}>
-        No content available
-      </Alert>
-    );
-  }
+  if (error) return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
+  if (!content) return <Alert severity="info" sx={{ m: 2 }}>{isHindi ? 'कोई सामग्री उपलब्ध नहीं' : 'No content available'}</Alert>;
 
   return (
     <Box>
@@ -182,9 +195,7 @@ const ContentViewer = ({ moduleId, onBack, onNextModule }) => {
       <Paper sx={{ p: 2, mb: 2, bgcolor: 'primary.main', color: 'white' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton color="inherit" onClick={onBack}>
-              <ArrowBack />
-            </IconButton>
+            <IconButton color="inherit" onClick={onBack}><ArrowBack /></IconButton>
             <Typography variant="h6" sx={{ ml: 1 }}>
               {content.file_path.split('/').pop().replace('.md', '').replace(/-/g, ' ').toUpperCase()}
             </Typography>
@@ -197,79 +208,82 @@ const ContentViewer = ({ moduleId, onBack, onNextModule }) => {
 
       {/* Content */}
       <Paper sx={{ p: 3 }}>
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Chip label="Reading" size="small" color="primary" />
-          <Chip 
-            label="10 min read" 
-            size="small" 
-            icon={<AccessTime sx={{ fontSize: 14 }} />} 
-            variant="outlined" 
-          />
+        {/* Status chips */}
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Chip label={isHindi ? 'पढ़ाई' : 'Reading'} size="small" color="primary" />
+          <Chip label="10 min read" size="small" icon={<AccessTime sx={{ fontSize: 14 }} />} variant="outlined" />
+          {isHindi && translating && (
+            <Chip
+              icon={<Translate sx={{ fontSize: 14 }} />}
+              label="हिंदी में अनुवाद हो रहा है..."
+              size="small"
+              color="warning"
+              variant="outlined"
+            />
+          )}
+          {isHindi && translatedContent && !translating && (
+            <Chip
+              icon={<Translate sx={{ fontSize: 14 }} />}
+              label="हिंदी में अनुवादित ✓"
+              size="small"
+              color="success"
+              variant="outlined"
+            />
+          )}
+          {isHindi && translationError && !translating && (
+            <Chip label="अनुवाद विफल - मूल सामग्री" size="small" color="error" variant="outlined" />
+          )}
         </Box>
 
         <Divider sx={{ mb: 3 }} />
 
-        {/* Markdown Content */}
-        <Box sx={{ 
-          '& h1': { color: 'primary.main', mb: 2, mt: 3 },
-          '& h2': { color: 'secondary.main', mb: 2, mt: 3 },
-          '& h3': { color: 'text.primary', mb: 1, mt: 2 },
-          '& p': { mb: 2, lineHeight: 1.6 },
-          '& ul, & ol': { mb: 2, pl: 3 },
-          '& li': { mb: 1 },
-          '& blockquote': { 
-            borderLeft: '4px solid primary.main', 
-            pl: 2, 
-            ml: 0, 
-            bgcolor: 'grey.50', 
-            py: 1,
-            fontStyle: 'italic'
-          },
-          '& code': { 
-            bgcolor: 'grey.200', 
-            px: 1, 
-            py: 0.5, 
-            borderRadius: 1,
-            fontFamily: 'monospace'
-          },
-          '& pre': { 
-            bgcolor: 'grey.900', 
-            color: 'white',
-            p: 2, 
-            borderRadius: 1,
-            overflow: 'auto',
-            '& code': { bgcolor: 'transparent', p: 0 }
-          }
-        }}>
-          <ReactMarkdown>{content.content}</ReactMarkdown>
-        </Box>
+        {/* Translation loading overlay */}
+        {translating ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8, gap: 2 }}>
+            <CircularProgress size={48} />
+            <Typography variant="h6" color="text.secondary">🌐 हिंदी में अनुवाद हो रहा है...</Typography>
+            <Typography variant="body2" color="text.secondary">कृपया प्रतीक्षा करें</Typography>
+          </Box>
+        ) : (
+          <Box sx={{
+            '& h1': { color: 'primary.main', mb: 2, mt: 3 },
+            '& h2': { color: 'secondary.main', mb: 2, mt: 3 },
+            '& h3': { color: 'text.primary', mb: 1, mt: 2 },
+            '& p': { mb: 2, lineHeight: 1.6 },
+            '& ul, & ol': { mb: 2, pl: 3 },
+            '& li': { mb: 1 },
+            '& blockquote': { borderLeft: '4px solid', borderColor: 'primary.main', pl: 2, ml: 0, bgcolor: 'grey.50', py: 1, fontStyle: 'italic' },
+            '& code': { bgcolor: 'grey.200', px: 1, py: 0.5, borderRadius: 1, fontFamily: 'monospace' },
+            '& pre': { bgcolor: 'grey.900', color: 'white', p: 2, borderRadius: 1, overflow: 'auto', '& code': { bgcolor: 'transparent', p: 0 } }
+          }}>
+            <ReactMarkdown>{displayContent}</ReactMarkdown>
+          </Box>
+        )}
 
         {/* Action Buttons */}
         <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button 
-            variant={isCompleted ? "outlined" : "contained"} 
+          <Button
+            variant={isCompleted ? 'outlined' : 'contained'}
             startIcon={isCompleted ? <CheckCircle /> : <PlayArrow />}
             onClick={handleMarkAsComplete}
-            color={isCompleted ? "success" : "primary"}
+            color={isCompleted ? 'success' : 'primary'}
           >
-            {isCompleted ? 'Completed ✓' : 'Mark as Complete'}
+            {isCompleted
+              ? (isHindi ? 'पूर्ण हो गया ✓' : 'Completed ✓')
+              : (isHindi ? 'पूर्ण के रूप में चिह्नित करें' : 'Mark as Complete')}
           </Button>
-          <Button 
-            variant="outlined" 
-            endIcon={<NavigateNext />}
-            onClick={handleNextLesson}
-            disabled={!nextModule}
-          >
-            {nextModule ? `Next: ${nextModule.title}` : 'Last Module'}
+          <Button variant="outlined" endIcon={<NavigateNext />} onClick={handleNextLesson} disabled={!nextModule}>
+            {nextModule
+              ? (isHindi ? `अगला: ${nextModule.title}` : `Next: ${nextModule.title}`)
+              : (isHindi ? 'अंतिम मॉड्यूल' : 'Last Module')}
           </Button>
         </Box>
       </Paper>
 
-      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
         message={snackbar.message}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />

@@ -28,87 +28,29 @@ import {
   RocketLaunch,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const Home = () => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     setLoaded(true);
   }, []);
 
   const features = [
-    {
-      icon: <School />,
-      title: 'Financial Basics',
-      description: 'Learn fundamental concepts about money, banking, and finance',
-      color: '#1976d2',
-      gradient: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-      action: () => navigate('/learn/basics'),
-      badge: 'Beginner',
-      rating: 4.8,
-    },
-    {
-      icon: <AccountBalance />,
-      title: 'Personal Finance',
-      description: 'Master budgeting, saving, and managing your money wisely',
-      color: '#388e3c',
-      gradient: 'linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)',
-      action: () => navigate('/learn/personal-finance'),
-      badge: 'Popular',
-      rating: 4.9,
-    },
-    {
-      icon: <TrendingUp />,
-      title: 'Investments',
-      description: 'Understand stocks, mutual funds, and growing your wealth',
-      color: '#f57c00',
-      gradient: 'linear-gradient(135deg, #f57c00 0%, #ffb74d 100%)',
-      action: () => navigate('/learn/investments'),
-      badge: 'Advanced',
-      rating: 4.7,
-    },
-    {
-      icon: <Chat />,
-      title: 'AI Assistant',
-      description: 'Get personalized answers to your financial questions',
-      color: '#d32f2f',
-      gradient: 'linear-gradient(135deg, #d32f2f 0%, #ef5350 100%)',
-      action: () => navigate('/chat'),
-      badge: 'AI-Powered',
-      rating: 4.9,
-    },
+    { icon: <School />, title: t('financialBasics'), description: t('financialBasicsDesc'), color: '#1976d2', gradient: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)', action: () => navigate('/learn/basics'), badge: t('beginner'), rating: 4.8 },
+    { icon: <AccountBalance />, title: t('personalFinance'), description: t('personalFinanceDesc'), color: '#388e3c', gradient: 'linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)', action: () => navigate('/learn/personal-finance'), badge: t('popular'), rating: 4.9 },
+    { icon: <TrendingUp />, title: t('investments'), description: t('investmentsDesc'), color: '#f57c00', gradient: 'linear-gradient(135deg, #f57c00 0%, #ffb74d 100%)', action: () => navigate('/learn/investments'), badge: t('advanced'), rating: 4.7 },
+    { icon: <Chat />, title: t('aiAssistant'), description: t('aiAssistantDesc'), color: '#d32f2f', gradient: 'linear-gradient(135deg, #d32f2f 0%, #ef5350 100%)', action: () => navigate('/chat'), badge: t('aiPowered'), rating: 4.9 },
   ];
 
   const stats = [
-    { 
-      label: 'Learning Modules', 
-      value: '50+', 
-      icon: <School />,
-      color: '#1976d2',
-      gradient: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-    },
-    { 
-      label: 'Expert Topics', 
-      value: '100+', 
-      icon: <Lightbulb />,
-      color: '#ffc107',
-      gradient: 'linear-gradient(135deg, #ffc107 0%, #ffca28 100%)',
-    },
-    { 
-      label: 'Active Learners', 
-      value: '1000+', 
-      icon: <People />,
-      color: '#388e3c',
-      gradient: 'linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)',
-    },
-    { 
-      label: 'Success Rate', 
-      value: '95%', 
-      icon: <TrendingUp />,
-      color: '#f57c00',
-      gradient: 'linear-gradient(135deg, #f57c00 0%, #ffb74d 100%)',
-    },
+    { label: t('learningModules'), value: '50+', icon: <School />, color: '#1976d2', gradient: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)' },
+    { label: t('expertTopics'), value: '100+', icon: <Lightbulb />, color: '#ffc107', gradient: 'linear-gradient(135deg, #ffc107 0%, #ffca28 100%)' },
+    { label: t('activeLearners'), value: '1000+', icon: <People />, color: '#388e3c', gradient: 'linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)' },
+    { label: t('successRate'), value: '95%', icon: <TrendingUp />, color: '#f57c00', gradient: 'linear-gradient(135deg, #f57c00 0%, #ffb74d 100%)' },
   ];
 
   return (
@@ -193,35 +135,20 @@ const Home = () => {
               </Zoom>
               
               <Slide direction="down" in={loaded} timeout={1400}>
-                <Typography variant="h2" gutterBottom sx={{ 
-                  fontWeight: 700,
-                  textShadow: '2px 2px 4px rgba(0, 0, 0, 0.3)',
-                  mb: 2,
-                }}>
-                  🧠 Welcome to FinSage
+                <Typography variant="h2" gutterBottom sx={{ fontWeight: 700, textShadow: '2px 2px 4px rgba(0, 0, 0, 0.3)', mb: 2 }}>
+                  {t('welcomeTitle')}
                 </Typography>
               </Slide>
               
               <Slide direction="up" in={loaded} timeout={1600}>
-                <Typography variant="h4" gutterBottom sx={{ 
-                  fontWeight: 400,
-                  opacity: 0.95,
-                  mb: 3,
-                }}>
-                  Your Journey to Financial Literacy Starts Here
+                <Typography variant="h4" gutterBottom sx={{ fontWeight: 400, opacity: 0.95, mb: 3 }}>
+                  {t('welcomeSubtitle')}
                 </Typography>
               </Slide>
               
               <Fade in={loaded} timeout={1800}>
-                <Typography variant="h6" sx={{ 
-                  mb: 4, 
-                  opacity: 0.9,
-                  lineHeight: 1.6,
-                  maxWidth: 600,
-                  mx: 'auto',
-                }}>
-                  Master personal finance, investing, and money management with our comprehensive 
-                  learning platform and AI-powered financial assistant.
+                <Typography variant="h6" sx={{ mb: 4, opacity: 0.9, lineHeight: 1.6, maxWidth: 600, mx: 'auto' }}>
+                  {t('welcomeDesc')}
                 </Typography>
               </Fade>
               
@@ -247,33 +174,16 @@ const Home = () => {
                       transition: 'all 0.3s ease',
                     }}
                   >
-                    Start Learning
+                    {t('startLearning')}
                   </Button>
                 </Grow>
                 
                 <Grow in={loaded} timeout={2200}>
                   <Button
-                    variant="outlined"
-                    size="large"
-                    endIcon={<AutoAwesome />}
-                    onClick={() => navigate('/chat')}
-                    sx={{ 
-                      borderColor: 'white', 
-                      color: 'white', 
-                      '&:hover': { 
-                        borderColor: 'white', 
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
-                      },
-                      px: 4,
-                      py: 1.5,
-                      fontSize: '1.1rem',
-                      fontWeight: 600,
-                      transition: 'all 0.3s ease',
-                    }}
+                    variant="outlined" size="large" endIcon={<AutoAwesome />} onClick={() => navigate('/chat')}
+                    sx={{ borderColor: 'white', color: 'white', '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.15)', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)' }, px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 600, transition: 'all 0.3s ease' }}
                   >
-                    Ask AI Assistant
+                    {t('askAI')}
                   </Button>
                 </Grow>
               </Box>
@@ -335,24 +245,14 @@ const Home = () => {
         </Grid>
 
         {/* Features Section */}
-        <Fade in={loaded} timeout={2800}>
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="h3" gutterBottom sx={{ 
-              fontWeight: 700,
-              color: '#1976d2',
-              mb: 2,
-            }}>
-              🚀 Explore Learning Paths
+            <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, color: '#1976d2', mb: 2 }}>
+              {t('explorePaths')}
             </Typography>
-            <Typography variant="h6" sx={{ 
-              color: 'text.secondary',
-              maxWidth: 600,
-              mx: 'auto',
-            }}>
-              Choose your learning journey and master financial literacy at your own pace
+            <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}>
+              {t('exploreDesc')}
             </Typography>
           </Box>
-        </Fade>
 
         <Grid container spacing={4}>
           {features.map((feature, index) => (
@@ -468,7 +368,7 @@ const Home = () => {
                         },
                       }}
                     >
-                      Explore
+                      {t('explore')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -487,91 +387,37 @@ const Home = () => {
             boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
           }}>
             <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Typography variant="h4" gutterBottom sx={{ 
-                fontWeight: 700,
-                color: '#1976d2',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 1,
-              }}>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#1976d2', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                 <AutoAwesome sx={{ color: '#ffc107', fontSize: 32 }} />
-                Quick Financial Tips
+                {t('quickTips')}
               </Typography>
               <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                Daily wisdom to boost your financial knowledge
+                {t('quickTipsDesc')}
               </Typography>
             </Box>
             
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
                 <Grow in={loaded} timeout={3800}>
-                  <Box sx={{ 
-                    p: 3,
-                    background: 'white',
-                    borderRadius: 2,
-                    textAlign: 'center',
-                    boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)',
-                    transition: 'transform 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-                    },
-                  }}>
-                    <Typography variant="h6" sx={{ color: '#1976d2', mb: 2, fontWeight: 600 }}>
-                      💰 Save First
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-                      Pay yourself before paying bills. Build habit of saving at least 20% of your income first.
-                    </Typography>
+                  <Box sx={{ p: 3, background: 'white', borderRadius: 2, textAlign: 'center', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)', transition: 'transform 0.3s ease', '&:hover': { transform: 'translateY(-5px)', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)' } }}>
+                    <Typography variant="h6" sx={{ color: '#1976d2', mb: 2, fontWeight: 600 }}>{t('saveFristTitle')}</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>{t('saveFirstDesc')}</Typography>
                   </Box>
                 </Grow>
               </Grid>
-              
               <Grid item xs={12} md={4}>
                 <Grow in={loaded} timeout={4000}>
-                  <Box sx={{ 
-                    p: 3,
-                    background: 'white',
-                    borderRadius: 2,
-                    textAlign: 'center',
-                    boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)',
-                    transition: 'transform 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-                    },
-                  }}>
-                    <Typography variant="h6" sx={{ color: '#388e3c', mb: 2, fontWeight: 600 }}>
-                      📊 Track Expenses
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-                      Know where your money goes. Use apps or spreadsheets to monitor every expense.
-                    </Typography>
+                  <Box sx={{ p: 3, background: 'white', borderRadius: 2, textAlign: 'center', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)', transition: 'transform 0.3s ease', '&:hover': { transform: 'translateY(-5px)', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)' } }}>
+                    <Typography variant="h6" sx={{ color: '#388e3c', mb: 2, fontWeight: 600 }}>{t('trackExpTitle')}</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>{t('trackExpDesc')}</Typography>
                   </Box>
                 </Grow>
               </Grid>
-              
               <Grid item xs={12} md={4}>
                 <Grow in={loaded} timeout={4200}>
-                  <Box sx={{ 
-                    p: 3,
-                    background: 'white',
-                    borderRadius: 2,
-                    textAlign: 'center',
-                    boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)',
-                    transition: 'transform 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-                    },
-                  }}>
-                    <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 600 }}>
-                      🎯 Set Goals
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-                      Clear financial goals drive success. Set SMART goals and track progress regularly.
-                    </Typography>
+                  <Box sx={{ p: 3, background: 'white', borderRadius: 2, textAlign: 'center', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)', transition: 'transform 0.3s ease', '&:hover': { transform: 'translateY(-5px)', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)' } }}>
+                    <Typography variant="h6" sx={{ color: '#f57c00', mb: 2, fontWeight: 600 }}>{t('setGoalsTitle')}</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>{t('setGoalsDesc')}</Typography>
                   </Box>
                 </Grow>
               </Grid>

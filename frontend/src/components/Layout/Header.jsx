@@ -12,6 +12,7 @@ import {
   ListItemText,
   Divider,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import { 
   AccountCircle, 
@@ -24,12 +25,14 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../../services/authAPI';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+  const { t, toggleLanguage, isHindi } = useLanguage();
 
   // Check for logged in user on component mount
   useEffect(() => {
@@ -65,8 +68,8 @@ const Header = () => {
   }, []);
 
   const navItems = [
-    { label: 'Home', icon: <School />, path: '/' },
-    { label: 'Chat', icon: <Chat />, path: '/chat' },
+    { label: t('home'), icon: <School />, path: '/' },
+    { label: t('chat'), icon: <Chat />, path: '/chat' },
   ];
 
   const handleMenuOpen = (event) => {
@@ -106,14 +109,34 @@ const Header = () => {
             <School />
           </Avatar>
           <Typography variant="h6" noWrap component="div">
-            🧠 FinSage
+            {t('appName')}
           </Typography>
           <Typography variant="subtitle2" sx={{ ml: 2, color: 'rgba(255,255,255,0.7)' }}>
-            Financial Literacy Platform
+            {t('appSubtitle')}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Hindi/English Toggle Button */}
+          <Tooltip title={isHindi ? t('switchToEnglish') : t('switchToHindi')}>
+            <Chip
+              label={isHindi ? '🇬🇧 EN' : '🇮🇳 हि'}
+              onClick={toggleLanguage}
+              sx={{
+                cursor: 'pointer',
+                color: 'white',
+                borderColor: 'rgba(255,255,255,0.6)',
+                border: '1px solid',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                bgcolor: isHindi ? 'rgba(255,153,0,0.25)' : 'rgba(255,255,255,0.1)',
+                '&:hover': {
+                  bgcolor: isHindi ? 'rgba(255,153,0,0.4)' : 'rgba(255,255,255,0.2)',
+                },
+                transition: 'all 0.3s ease',
+              }}
+            />
+          </Tooltip>
           {navItems.map((item) => (
             <IconButton
               key={item.path}
@@ -181,14 +204,14 @@ const Header = () => {
                   <ListItemIcon>
                     <Person fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>Profile</ListItemText>
+                  <ListItemText>{t('profile')}</ListItemText>
                 </MenuItem>
                 <Divider />
                 <MenuItem onClick={handleLogout}>
                   <ListItemIcon>
                     <Logout fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>Logout</ListItemText>
+                  <ListItemText>{t('logout')}</ListItemText>
                 </MenuItem>
               </Menu>
             </>
